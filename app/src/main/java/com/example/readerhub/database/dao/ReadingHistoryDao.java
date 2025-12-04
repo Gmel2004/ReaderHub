@@ -1,4 +1,4 @@
-package com.example.readerhub.dao;
+package com.example.readerhub.database.dao;
 
 import androidx.room.Dao;
 import androidx.room.Insert;
