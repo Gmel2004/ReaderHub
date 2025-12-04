@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_bookmark"
+        android:icon="@drawable/ic_bookmark"
+        android:title="Bookmark"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_night_mode"
+        android:icon="@drawable/ic_night_mode"
+        android:title="Night Mode"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_brightness"
+        android:icon="@drawable/ic_brightness"
+        android:title="Brightness"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_font_size"
+        android:title="Font Size"
+        app:showAsAction="never" />
+
+</menu>
