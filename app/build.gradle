@@ -44,6 +44,11 @@ android {
     }
 }
 
+repositories {
+    google()
+    mavenCentral()
+}
+
 dependencies {
 
     implementation libs.appcompat.v171
@@ -72,7 +77,7 @@ dependencies {
     implementation libs.android.pdf.viewer
 
     // Glide for image loading
-    implementation libs.glide
+    implementation 'com.github.bumptech.glide:glide:5.0.5'
     annotationProcessor libs.compiler
 
     // Testing
