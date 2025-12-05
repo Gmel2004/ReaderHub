@@ -45,6 +45,7 @@ android {
 }
 
 dependencies {
+
     implementation libs.appcompat.v171
     implementation libs.material.v1110
     implementation libs.constraintlayout.v221

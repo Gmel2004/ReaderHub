@@ -16,54 +16,54 @@
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true">
 
-<!--        &lt;!&ndash; Main Activity &ndash;&gt;-->
-<!--        <activity-->
-<!--            android:name=".activities.MainActivity"-->
-<!--            android:exported="false" />-->
+        <!-- Main Activity -->
+        <activity
+            android:name=".activities.MainActivity"
+            android:exported="false" />
 
-<!--        &lt;!&ndash; Login Activity &ndash;&gt;-->
-<!--        <activity-->
-<!--            android:name=".activities.LoginActivity"-->
-<!--            android:exported="true">-->
-<!--            <intent-filter>-->
-<!--                <action android:name="android.intent.action.MAIN" />-->
-<!--                <category android:name="android.intent.category.LAUNCHER" />-->
-<!--            </intent-filter>-->
-<!--        </activity>-->
+        <!-- Login Activity -->
+        <activity
+            android:name=".activities.LoginActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
 
-<!--        &lt;!&ndash; Register Activity &ndash;&gt;-->
-<!--        <activity-->
-<!--            android:name=".activities.RegisterActivity"-->
-<!--            android:exported="false" />-->
+        <!-- Register Activity -->
+        <activity
+            android:name=".activities.RegisterActivity"
+            android:exported="false" />
 
-<!--        &lt;!&ndash; Reader Activities &ndash;&gt;-->
-<!--        <activity-->
-<!--            android:name=".activities.EpubReaderActivity"-->
-<!--            android:exported="false"-->
-<!--            android:screenOrientation="portrait" />-->
+        <!-- Reader Activities -->
+        <activity
+            android:name=".activities.EpubReaderActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
 
-<!--        <activity-->
-<!--            android:name=".activities.PdfReaderActivity"-->
-<!--            android:exported="false"-->
-<!--            android:screenOrientation="portrait" />-->
+        <activity
+            android:name=".activities.PdfReaderActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
 
-<!--        <activity-->
-<!--            android:name=".activities.Fb2ReaderActivity"-->
-<!--            android:exported="false"-->
-<!--            android:screenOrientation="portrait" />-->
+        <activity
+            android:name=".activities.Fb2ReaderActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
 
-<!--        &lt;!&ndash; Other Activities &ndash;&gt;-->
-<!--        <activity-->
-<!--            android:name=".activities.BookDetailsActivity"-->
-<!--            android:exported="false" />-->
+        <!-- Other Activities -->
+        <activity
+            android:name=".activities.BookDetailsActivity"
+            android:exported="false" />
 
-<!--        <activity-->
-<!--            android:name=".activities.WebParserActivity"-->
-<!--            android:exported="false" />-->
+        <activity
+            android:name=".activities.WebParserActivity"
+            android:exported="false" />
 
-<!--        <activity-->
-<!--            android:name=".activities.SettingsActivity"-->
-<!--            android:exported="false" />-->
+        <activity
+            android:name=".activities.SettingsActivity"
+            android:exported="false" />
 
     </application>
 
