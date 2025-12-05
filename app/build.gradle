@@ -4,14 +4,23 @@ plugins {
 
 android {
     namespace 'com.example.readerhub'
-    compileSdk 34
+    compileSdk 36
 
     defaultConfig {
         applicationId "com.example.readerhub"
-        minSdk 21
+        minSdk 23
         targetSdk 36
         versionCode 1
         versionName "1.0"
+
+        // Читаем URL из local.properties или используем дефолтный
+        Properties properties = new Properties()
+        if (rootProject.file("local.properties").exists()) {
+            properties.load(rootProject.file("local.properties").newDataInputStream())
+        }
+
+        buildConfigField "String", "API_BASE_URL",
+                properties.getProperty("api.base.url", '"https://readershub.com/api/"')
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -27,23 +36,47 @@ android {
         targetCompatibility JavaVersion.VERSION_11
     }
     buildFeatures {
+        buildConfig = true
         viewBinding true
+    }
+    viewBinding {
+        enabled true
     }
 }
 
 dependencies {
 
-    implementation libs.appcompat
-    implementation libs.material
-    implementation libs.constraintlayout
-    implementation libs.lifecycle.livedata.ktx
-    implementation libs.lifecycle.viewmodel.ktx
-    implementation libs.navigation.fragment
-    implementation libs.navigation.ui
-    implementation libs.room.common.jvm
-    implementation libs.room.runtime
+    implementation libs.appcompat.v171
+    implementation libs.material.v1110
+    implementation libs.constraintlayout.v221
+    implementation libs.cardview
+    implementation libs.recyclerview
+
+    // Room Database
+    implementation libs.room.runtime.v261
+    annotationProcessor libs.room.compiler.v261
+
+    // Retrofit & OkHttp
+    implementation libs.retrofit.v290
+    implementation libs.converter.gson.v290
+    implementation libs.okhttp
+    implementation libs.logging.interceptor
+
+    // Jsoup for HTML parsing
+    implementation libs.jsoup
+
+    // EPUB Reader
+    implementation libs.folioreader.android
+
+    // PDF Viewer
+    implementation libs.android.pdf.viewer
+
+    // Glide for image loading
+    implementation libs.glide
+    annotationProcessor libs.compiler
+
+    // Testing
     testImplementation libs.junit
-    androidTestImplementation libs.ext.junit
-    androidTestImplementation libs.espresso.core
-    annotationProcessor libs.room.compiler
+    androidTestImplementation libs.junit.v130
+    androidTestImplementation libs.espresso.core.v370
 }
