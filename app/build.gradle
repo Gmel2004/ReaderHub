@@ -45,7 +45,6 @@ android {
 }
 
 dependencies {
-
     implementation libs.appcompat.v171
     implementation libs.material.v1110
     implementation libs.constraintlayout.v221
@@ -66,10 +65,14 @@ dependencies {
     implementation libs.jsoup
 
     // EPUB Reader
-    implementation 'com.folioreader:folioreader:0.5.4'
+    implementation 'com.github.folioreader:FolioReader-Android:0.5.4'
 
     // PDF Viewer
-    implementation libs.android.pdf.viewer
+    implementation 'com.github.vladgus:androidpdfviewer:3.1.0-beta.2'
+
+    //
+    implementation 'com.github.kittinunf.fuel:fuel:2.3.1'
+    implementation 'com.github.kittinunf.fuel:fuel-android:2.3.1'
 
     // Glide for image loading
     implementation 'com.github.bumptech.glide:glide:5.0.5'
