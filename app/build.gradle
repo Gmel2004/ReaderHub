@@ -20,7 +20,7 @@ android {
         }
 
         buildConfigField "String", "API_BASE_URL",
-                properties.getProperty("api.base.url", '"https://readershub.com/api/"')
+                properties.getProperty("api.base.url", '""')
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -42,11 +42,6 @@ android {
     viewBinding {
         enabled true
     }
-}
-
-repositories {
-    google()
-    mavenCentral()
 }
 
 dependencies {
@@ -71,7 +66,7 @@ dependencies {
     implementation libs.jsoup
 
     // EPUB Reader
-    implementation libs.folioreader.android
+    implementation 'com.folioreader:folioreader:0.5.4'
 
     // PDF Viewer
     implementation libs.android.pdf.viewer
@@ -82,7 +77,7 @@ dependencies {
 
     // Testing
     testImplementation libs.junit
-    androidTestImplementation libs.ext.junit
-    androidTestImplementation libs.espresso.core
+    androidTestImplementation libs.junit.v130
+    androidTestImplementation libs.espresso.core.v370
     annotationProcessor libs.room.compiler
 }

@@ -31,6 +31,7 @@ roomCompilerVersion = "2.6.1"
 roomRuntime = "2.8.4"
 roomCompiler = "2.8.4"
 roomRuntimeVersion = "2.6.1"
+folioreader = "0.5.4"
 
 [libraries]
 android-pdf-viewer = { module = "com.github.barteksc:android-pdf-viewer", version.ref = "androidPdfViewer" }
