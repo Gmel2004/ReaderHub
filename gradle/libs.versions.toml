@@ -8,7 +8,6 @@ compiler = "5.0.5"
 constraintlayoutVersion = "2.2.1"
 converterGson = "2.9.0"
 espressoCoreVersion = "3.7.0"
-folioreaderAndroid = "0.6.0"
 gson = "2.13.2"
 jsoup = "1.21.2"
 junit = "4.13.2"
@@ -40,7 +39,6 @@ compiler = { module = "com.github.bumptech.glide:compiler", version.ref = "compi
 constraintlayout-v221 = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintlayoutVersion" }
 converter-gson-v290 = { module = "com.squareup.retrofit2:converter-gson", version = "3.0.0" }
 espresso-core-v370 = { module = "androidx.test.espresso:espresso-core", version.ref = "espressoCoreVersion" }
-folioreader-android = { module = "com.github.FolioReader:FolioReader-Android", version.ref = "folioreaderAndroid" }
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 junit-v130 = { module = "androidx.test.ext:junit", version.ref = "androidxJunit" }
