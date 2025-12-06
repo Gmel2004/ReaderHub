@@ -1,6 +1,5 @@
 package com.example.readerhub.activities;
 
-import android.graphics.fonts.FontFamily;
 import android.os.Bundle;
 import android.widget.Toast;
 
@@ -12,9 +11,7 @@ import com.example.readerhub.models.ReadingHistory;
 import com.example.readerhub.repository.BookRepository;
 import com.example.readerhub.utils.PreferencesManager;
 import com.folioreader.Config;
-import com.folioreader.Config.*;
 import com.folioreader.FolioReader;
-import com.folioreader.Font;
 import com.folioreader.model.HighLight;
 import com.folioreader.model.locators.ReadLocator;
 import com.folioreader.util.OnHighlightListener;
@@ -68,8 +65,18 @@ public class EpubReaderActivity extends AppCompatActivity
         config.setShowTts(true);
         config.setNightMode(prefsManager.isNightMode());
         config.setFontSize(prefsManager.getFontSize());
-        config.setFont(1); //todo: Задать нормальное значение Font
 
+        // Fonts: 0=sans-serif, 1=serif, 2=monospace
+        String fontFamily = prefsManager.getFontFamily();
+        if (fontFamily.equals("serif")) {
+            config.setFont(1);
+        } else if (fontFamily.equals("monospace")) {
+            config.setFont(2);
+        } else {
+            config.setFont(0); // sans-serif default
+        }
+
+        folioReader.setConfig(config, true);
         folioReader.setOnHighlightListener(this);
         folioReader.setReadLocatorListener(this);
 
