@@ -43,6 +43,13 @@ public class WebBookParser {
         new ParseRanobeTask(url, listener).execute();
     }
 
+    // Парсинг поиска ranobe.me
+    public void searchRanobe(String query, OnBooksParseListener listener) {
+        String searchUrl = "https://ranobe.me/index.php?section=search&str=" +
+                query.replace(" ", "+");
+        new ParseRanobeTask(searchUrl, listener).execute();
+    }
+
     // Парсинг конкретной книги для получения подробной информации
     public void parseRanobeBookDetails(String bookUrl, OnBookDetailsListener listener) {
         new ParseBookDetailsTask(bookUrl, listener).execute();
@@ -87,62 +94,60 @@ public class WebBookParser {
                         .timeout(15000)
                         .get();
 
-                // ranobe.me использует класс "short-cont" для карточек книг
-                Elements bookCards = doc.select(".short-cont");
+                // ranobe.me использует класс "FicTable" для карточек книг
+                Elements bookCards = doc.select(".FicTable");
 
                 Log.d(TAG, "Found " + bookCards.size() + " book cards");
 
                 for (Element card : bookCards) {
                     try {
                         // Извлекаем заголовок и ссылку
-                        Element titleElement = card.selectFirst("h2 a, .sh-title a");
+                        Element titleElement = card.selectFirst(".FicTable_Title a");
                         if (titleElement == null) continue;
 
                         String title = titleElement.text().trim();
                         String bookUrl = titleElement.attr("abs:href");
 
-                        // Извлекаем автора
-                        Element authorElement = card.selectFirst(".sh-author");
-                        String author = authorElement != null ?
-                                authorElement.text().replace("Автор:", "").trim() :
-                                "Unknown Author";
+                        // Извлекаем автора (может не быть на странице поиска)
+                        String author = "Unknown Author";
 
                         ParsedBook book = new ParsedBook(title, author, bookUrl);
 
                         // Извлекаем обложку
-                        Element coverElement = card.selectFirst(".short-img img");
+                        Element coverElement = card.selectFirst(".FicTable_Cover img");
                         if (coverElement != null) {
                             book.coverUrl = coverElement.attr("abs:src");
-                            // Если src пустой, пробуем data-src (lazy loading)
                             if (book.coverUrl.isEmpty()) {
                                 book.coverUrl = coverElement.attr("abs:data-src");
                             }
                         }
 
-                        // Извлекаем краткое описание
-                        Element descElement = card.selectFirst(".sh-desc, .short-desk");
+                        // Извлекаем описание
+                        Element descElement = card.selectFirst(".FicTable_Description");
                         if (descElement != null) {
+                            // Убираем вложенные элементы жанров
+                            Element genresElement = descElement.selectFirst(".FicTable_Genres");
+                            if (genresElement != null) {
+                                genresElement.remove();
+                            }
                             book.description = descElement.text().trim();
-                            // Ограничиваем длину описания
                             if (book.description.length() > 200) {
                                 book.description = book.description.substring(0, 200) + "...";
                             }
                         }
 
                         // Извлекаем количество глав
-                        Element chaptersElement = card.selectFirst(".sh-chapters");
+                        Element chaptersElement = card.selectFirst(".ChaptersCount");
                         if (chaptersElement != null) {
-                            String chaptersText = chaptersElement.text();
+                            String chaptersText = chaptersElement.text().trim();
                             try {
-                                book.chapters = Integer.parseInt(
-                                        chaptersText.replaceAll("[^0-9]", "")
-                                );
+                                book.chapters = Integer.parseInt(chaptersText);
                             } catch (NumberFormatException e) {
                                 book.chapters = 0;
                             }
                         }
 
-                        book.fileType = "RANOBE"; // Веб-формат
+                        book.fileType = "RANOBE";
 
                         books.add(book);
                         Log.d(TAG, "Parsed book: " + title);

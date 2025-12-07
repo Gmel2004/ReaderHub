@@ -20,26 +20,45 @@
         android:appComponentFactory="androidx.core.app.CoreComponentFactory"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
-    <activity
-            android:name=".activities.MainActivity"
-            android:exported="false" />
-
+        <!-- Main Activity - LAUNCHER -->
         <activity
-            android:name=".activities.LoginActivity"
+            android:name=".activities.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <!--<activity android:name="com.folioreader.ui.activity.SearchActivity" tools:node="remove" />-->
 
-        <activity android:name=".activities.RegisterActivity" android:exported="false" />
-        <activity android:name=".activities.Fb2ReaderActivity" android:exported="false" />
-        <activity android:name=".activities.BookDetailsActivity" android:exported="false" />
-        <activity android:name=".activities.WebParserActivity" android:exported="false" />
-        <activity android:name=".activities.SettingsActivity" android:exported="false" />
+        <!-- Login Activity -->
+        <activity
+            android:name=".activities.LoginActivity"
+            android:exported="false" />
 
+        <!-- Register Activity -->
+        <activity
+            android:name=".activities.RegisterActivity"
+            android:exported="false" />
+
+        <!-- Reader Activities -->
+
+        <activity
+            android:name=".activities.Fb2ReaderActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Other Activities -->
+        <activity
+            android:name=".activities.BookDetailsActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activities.WebParserActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activities.SettingsActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

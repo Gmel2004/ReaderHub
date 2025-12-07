@@ -83,6 +83,13 @@ public class ParsedBookAdapter extends RecyclerView.Adapter<ParsedBookAdapter.Vi
                 listener.onDownloadClick(book);
             }
         });
+
+        // Клик по всей карточке тоже работает
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onDownloadClick(book);
+            }
+        });
     }
 
     @Override

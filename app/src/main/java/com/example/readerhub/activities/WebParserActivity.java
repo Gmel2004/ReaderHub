@@ -17,6 +17,7 @@ import com.example.readerhub.adapters.ParsedBookAdapter;
 import com.example.readerhub.models.Book;
 import com.example.readerhub.parsers.WebBookParser;
 import com.example.readerhub.repository.BookRepository;
+import com.example.readerhub.utils.FileUtils;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -63,7 +64,7 @@ public class WebParserActivity extends AppCompatActivity
     }
 
     private void setupListeners() {
-        parseButton.setOnClickListener(v -> startParsing());
+        parseButton.setOnClickListener(v -> parser.searchRanobe(urlEditText.getText().toString().trim(), this));
 
         // Быстрый доступ к популярным разделам ranobe.me
         quickRanobeButton.setOnClickListener(v -> showQuickLinks());
@@ -71,9 +72,10 @@ public class WebParserActivity extends AppCompatActivity
 
     private void showQuickLinks() {
         String[] options = {
+                "Поиск по названию",
                 "Новинки",
                 "Популярные",
-                "Топ за неделю",
+                "Завершённые",
                 "Русские ранобэ",
                 "Корейские ранобэ",
                 "Японские ранобэ",
@@ -81,22 +83,49 @@ public class WebParserActivity extends AppCompatActivity
         };
 
         String[] urls = {
-                "https://ranobe.me/novels",
-                "https://ranobe.me/novels?sort=popular",
-                "https://ranobe.me/novels?sort=week",
-                "https://ranobe.me/novels?country=russia",
-                "https://ranobe.me/novels?country=korea",
-                "https://ranobe.me/novels?country=japan",
-                "https://ranobe.me/novels?country=china"
+                "SEARCH", // специальный маркер для поиска
+                "https://ranobe.me/",
+                "https://ranobe.me/catalog/sort/popular",
+                "https://ranobe.me/catalog/status/completed",
+                "https://ranobe.me/catalog/country/russia",
+                "https://ranobe.me/catalog/country/korea",
+                "https://ranobe.me/catalog/country/japan",
+                "https://ranobe.me/catalog/country/china"
         };
 
         new AlertDialog.Builder(this)
                 .setTitle("Быстрый переход")
                 .setItems(options, (dialog, which) -> {
-                    urlEditText.setText(urls[which]);
-                    startParsing();
+                    if (urls[which].equals("SEARCH")) {
+                        showSearchDialog();
+                    } else {
+                        urlEditText.setText(urls[which]);
+                        startParsing();
+                    }
                 })
                 .show();
+    }
+
+    private void showSearchDialog() {
+        EditText input = new EditText(this);
+        input.setHint("Название книги");
+
+        new AlertDialog.Builder(this)
+                .setTitle("Поиск на ranobe.me")
+                .setView(input)
+                .setPositiveButton("Искать", (dialog, which) -> {
+                    String query = input.getText().toString().trim();
+                    if (!query.isEmpty()) {
+                        searchRanobe(query);
+                    }
+                })
+                .setNegativeButton("Отмена", null)
+                .show();
+    }
+
+    private void searchRanobe(String query) {
+        setLoading(true);
+        parser.searchRanobe(query, this);
     }
 
     private void startParsing() {

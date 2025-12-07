@@ -25,6 +25,8 @@ import com.example.readerhub.utils.PreferencesManager;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.tabs.TabLayout;
 
+import java.util.List;
+
 public class MainActivity extends AppCompatActivity implements BookAdapter.OnBookClickListener {
 
     private static final int PERMISSION_REQUEST_CODE = 100;
@@ -45,13 +47,6 @@ public class MainActivity extends AppCompatActivity implements BookAdapter.OnBoo
 
         prefsManager = new PreferencesManager(this);
         repository = new BookRepository(this);
-
-        // Check if user is logged in
-        if (!prefsManager.isLoggedIn()) {
-            startActivity(new Intent(this, LoginActivity.class));
-            finish();
-            return;
-        }
 
         initViews();
         checkPermissions();
@@ -125,25 +120,16 @@ public class MainActivity extends AppCompatActivity implements BookAdapter.OnBoo
         repository.getFavoriteBooks(books -> runOnUiThread(() -> adapter.setBooks(books)));
     }
 
-    public boolean onQueryTextChange(String newText) {
-        if (newText.isEmpty()) {
-            loadBooks();
-        }
-        return true;
-    }
-
     @Override
     public void onBookClick(Book book) {
         Intent intent;
         switch (book.getFileType()) {
-
 //            case "EPUB":
 //                intent = new Intent(this, EpubReaderActivity.class);
 //                break;
 //            case "PDF":
 //                intent = new Intent(this, PdfReaderActivity.class);
 //                break;
-
             case "FB2":
                 intent = new Intent(this, Fb2ReaderActivity.class);
                 break;
@@ -256,8 +242,20 @@ public class MainActivity extends AppCompatActivity implements BookAdapter.OnBoo
         if (id == R.id.action_settings) {
             startActivity(new Intent(this, SettingsActivity.class));
             return true;
+        } else if (id == R.id.action_sync) {
+            if (prefsManager.isLoggedIn()) {
+                // TODO: Sync implementation
+                Toast.makeText(this, "Syncing...", Toast.LENGTH_SHORT).show();
+            } else {
+                startActivity(new Intent(this, LoginActivity.class));
+            }
+            return true;
         } else if (id == R.id.action_logout) {
-            logout();
+            if (prefsManager.isLoggedIn()) {
+                logout();
+            } else {
+                startActivity(new Intent(this, LoginActivity.class));
+            }
             return true;
         }
 
