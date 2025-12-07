@@ -136,12 +136,14 @@ public class MainActivity extends AppCompatActivity implements BookAdapter.OnBoo
     public void onBookClick(Book book) {
         Intent intent;
         switch (book.getFileType()) {
-            case "EPUB":
-                intent = new Intent(this, EpubReaderActivity.class);
-                break;
-            case "PDF":
-                intent = new Intent(this, PdfReaderActivity.class);
-                break;
+
+//            case "EPUB":
+//                intent = new Intent(this, EpubReaderActivity.class);
+//                break;
+//            case "PDF":
+//                intent = new Intent(this, PdfReaderActivity.class);
+//                break;
+
             case "FB2":
                 intent = new Intent(this, Fb2ReaderActivity.class);
                 break;

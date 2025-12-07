@@ -65,10 +65,10 @@ dependencies {
     implementation libs.jsoup
 
     // EPUB Reader
-    implementation 'com.github.folioreader:FolioReader-Android:0.5.4'
+    //implementation 'com.github.folioreader:FolioReader-Android:0.5.4'
 
     // PDF Viewer
-    implementation 'com.github.vladgus:androidpdfviewer:3.1.0-beta.2'
+    //implementation 'com.github.mhiew:android-pdf-viewer:3.2.0-beta.1'
 
     //
     implementation 'com.github.kittinunf.fuel:fuel:2.3.1'

@@ -14,11 +14,11 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true"
         tools:targetApi="31"
         tools:replace="android:appComponentFactory"
-        android:appComponentFactory="androidx.core.app.CoreComponentFactory">
+        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
     <activity
             android:name=".activities.MainActivity"
@@ -32,11 +32,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name="com.folioreader.ui.activity.SearchActivity" tools:node="remove" /> <!--todo: убрать костыль-->
+        <!--<activity android:name="com.folioreader.ui.activity.SearchActivity" tools:node="remove" />-->
 
         <activity android:name=".activities.RegisterActivity" android:exported="false" />
-        <activity android:name=".activities.EpubReaderActivity" android:exported="false" />
-        <activity android:name=".activities.PdfReaderActivity" android:exported="false" />
         <activity android:name=".activities.Fb2ReaderActivity" android:exported="false" />
         <activity android:name=".activities.BookDetailsActivity" android:exported="false" />
         <activity android:name=".activities.WebParserActivity" android:exported="false" />
