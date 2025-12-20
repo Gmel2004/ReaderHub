@@ -7,7 +7,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
@@ -17,8 +16,9 @@ import com.example.readerhub.R;
 import com.example.readerhub.parsers.WebBookParser;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
+import java.util.stream.Collectors;
 
 public class BookDetailsActivity extends AppCompatActivity {
 
@@ -129,9 +129,12 @@ public class BookDetailsActivity extends AppCompatActivity {
     }
 
     private void showVolumeSelection(Document doc) {
-        // Парсим тома
-        Elements volumeTexts = doc.select("b");
-        Elements epubLinks = doc.select("a[href*=format=epub]");
+        Elements volumeTexts = doc.select(".ContentTable b")
+                .stream()
+                .filter(e -> e.text().matches("\\d+\\s*-\\s*\\d+"))
+                .collect(Collectors.toCollection(Elements::new));
+
+        Elements epubLinks = doc.select(".ContentTable a[href*=format=epub]");
 
         if (volumeTexts.isEmpty() || epubLinks.isEmpty()) {
             showFormatSelection();
@@ -146,12 +149,12 @@ public class BookDetailsActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setTitle("Выберите том")
                 .setItems(volumes, (dialog, which) -> {
-                    // После выбора тома - выбираем формат
                     int volumePart = which + 1;
                     showFormatSelectionForVolume(volumePart);
                 })
                 .show();
     }
+
 
     private void showFormatSelectionForVolume(int part) {
         new AlertDialog.Builder(this)
