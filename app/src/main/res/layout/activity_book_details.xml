@@ -9,6 +9,15 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
+        <ImageView
+            android:id="@+id/coverImageView"
+            android:layout_width="200dp"
+            android:layout_height="300dp"
+            android:layout_gravity="center"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_book_placeholder"
+            android:layout_marginBottom="16dp" />
+
         <TextView
             android:id="@+id/titleTextView"
             android:layout_width="match_parent"
@@ -16,6 +25,7 @@
             android:text="Book Title"
             android:textSize="24sp"
             android:textStyle="bold"
+            android:gravity="center"
             android:layout_marginBottom="8dp" />
 
         <TextView
@@ -25,36 +35,41 @@
             android:text="Author"
             android:textSize="18sp"
             android:textColor="#757575"
+            android:gravity="center"
             android:layout_marginBottom="16dp" />
 
         <TextView
-            android:id="@+id/pagesTextView"
+            android:id="@+id/chaptersTextView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Pages: 0"
+            android:text="Chapters: 0"
             android:textSize="16sp"
-            android:layout_marginBottom="8dp" />
+            android:gravity="center"
+            android:layout_marginBottom="16dp" />
 
-        <TextView
-            android:id="@+id/progressTextView"
+        <Button
+            android:id="@+id/downloadButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Progress: 0%"
+            android:text="СКАЧАТЬ"
             android:textSize="16sp"
             android:layout_marginBottom="24dp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Bookmarks"
-            android:textSize="20sp"
+            android:text="Описание:"
+            android:textSize="18sp"
             android:textStyle="bold"
             android:layout_marginBottom="8dp" />
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/bookmarksRecyclerView"
+        <TextView
+            android:id="@+id/descriptionTextView"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:text="Description"
+            android:textSize="14sp"
+            android:lineSpacingMultiplier="1.2" />
 
     </LinearLayout>
 

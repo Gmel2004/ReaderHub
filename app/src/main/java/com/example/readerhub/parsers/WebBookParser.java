@@ -185,6 +185,7 @@ public class WebBookParser {
         private OnBookDetailsListener listener;
         private String error;
         private List<Chapter> chapters;
+        private String downloadUrl;
 
         public ParseBookDetailsTask(String bookUrl, OnBookDetailsListener listener) {
             this.bookUrl = bookUrl;
@@ -202,45 +203,66 @@ public class WebBookParser {
                         .timeout(15000)
                         .get();
 
-                // Извлекаем основную информацию о книге
-                String title = doc.selectFirst(".book-title, h1").text().trim();
+                // Извлекаем основную информацию из FicHead
+                String title = doc.selectFirst("h1").text().trim();
 
-                Element authorElement = doc.selectFirst(".book-author");
-                String author = authorElement != null ?
-                        authorElement.text().replace("Автор:", "").trim() :
-                        "Unknown Author";
+                // Автор
+                Element authorElement = doc.selectFirst(".title:contains(Автор:) + .content a");
+                String author = authorElement != null ? authorElement.text().trim() : "Unknown Author";
 
                 ParsedBook book = new ParsedBook(title, author, bookUrl);
 
                 // Обложка
-                Element coverElement = doc.selectFirst(".book-img img");
+                Element coverElement = doc.selectFirst(".FicCover img");
                 if (coverElement != null) {
                     book.coverUrl = coverElement.attr("abs:src");
                 }
 
-                // Полное описание
-                Element descElement = doc.selectFirst(".book-description, .full-description");
+                // Описание
+                Element descElement = doc.selectFirst(".summary_text_fic3");
                 if (descElement != null) {
+                    // Убираем теги
+                    descElement.select("a").remove();
+                    descElement.select("#more_tags").remove();
+                    descElement.select("#more_tags_button").remove();
                     book.description = descElement.text().trim();
                 }
 
-                // Парсим список глав
-                Elements chapterElements = doc.select(".chapter-item, .chapters-list li");
-
-                Log.d(TAG, "Found " + chapterElements.size() + " chapters");
-
-                int chapterNum = 1;
-                for (Element chapterElement : chapterElements) {
-                    Element linkElement = chapterElement.selectFirst("a");
-                    if (linkElement != null) {
-                        String chapterTitle = linkElement.text().trim();
-                        String chapterUrl = linkElement.attr("abs:href");
-
-                        chapters.add(new Chapter(chapterNum++, chapterTitle, chapterUrl));
+                // Количество глав
+                Element chaptersElement = doc.selectFirst(".title:contains(Глав в переводе:) + .content");
+                if (chaptersElement != null) {
+                    String chaptersText = chaptersElement.text().split(" ")[0];
+                    try {
+                        book.chapters = Integer.parseInt(chaptersText);
+                    } catch (NumberFormatException e) {
+                        book.chapters = 0;
                     }
                 }
 
-                book.chapters = chapters.size();
+                // Жанры
+                Element genresElement = doc.selectFirst(".title:contains(Жанры:) + .content");
+                if (genresElement != null) {
+                    book.description += "\n\nЖанры: " + genresElement.text();
+                }
+
+                // Год выпуска
+                Element yearElement = doc.selectFirst(".title:contains(Год выпуска:) + .content");
+                if (yearElement != null) {
+                    book.description += "\nГод: " + yearElement.text();
+                }
+
+                // URL для скачивания
+                Element downloadElement = doc.selectFirst("a.green[href*='action=download']");
+                if (downloadElement != null) {
+                    downloadUrl = downloadElement.attr("abs:href");
+                }
+
+                // Парсим ссылку на чтение для получения глав
+                Element readElement = doc.selectFirst("a.red[href*='/0']");
+                if (readElement != null) {
+                    String readUrl = readElement.attr("abs:href");
+                    // Здесь можно распарсить список глав, но это требует дополнительного запроса
+                }
 
                 return book;
 
@@ -258,6 +280,7 @@ public class WebBookParser {
         @Override
         protected void onPostExecute(ParsedBook book) {
             if (book != null && listener != null) {
+                book.downloadUrl = downloadUrl;
                 listener.onDetailsLoaded(book, chapters);
             } else if (listener != null) {
                 listener.onError(error != null ? error : "Unknown error");

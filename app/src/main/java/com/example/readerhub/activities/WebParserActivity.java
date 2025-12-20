@@ -1,5 +1,6 @@
 package com.example.readerhub.activities;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -64,7 +65,7 @@ public class WebParserActivity extends AppCompatActivity
     }
 
     private void setupListeners() {
-        parseButton.setOnClickListener(v -> parser.searchRanobe(urlEditText.getText().toString().trim(), this));
+        parseButton.setOnClickListener(v -> startParsing());
 
         // Быстрый доступ к популярным разделам ranobe.me
         quickRanobeButton.setOnClickListener(v -> showQuickLinks());
@@ -183,15 +184,10 @@ public class WebParserActivity extends AppCompatActivity
 
     @Override
     public void onDownloadClick(WebBookParser.ParsedBook parsedBook) {
-        new AlertDialog.Builder(this)
-                .setTitle(parsedBook.title)
-                .setMessage("Что вы хотите сделать?")
-                .setPositiveButton("Открыть детали", (dialog, which) ->
-                        openBookDetails(parsedBook))
-                .setNegativeButton("Скачать все главы", (dialog, which) ->
-                        downloadAllChapters(parsedBook))
-                .setNeutralButton("Отмена", null)
-                .show();
+        // Открываем BookDetailsActivity вместо диалога
+        Intent intent = new Intent(this, BookDetailsActivity.class);
+        intent.putExtra("bookUrl", parsedBook.bookUrl);
+        startActivity(intent);
     }
 
     private void openBookDetails(WebBookParser.ParsedBook parsedBook) {
