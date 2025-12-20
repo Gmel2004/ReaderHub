@@ -92,7 +92,6 @@ public class BookDetailsActivity extends AppCompatActivity {
             try {
                 Document doc = Jsoup.connect(downloadCheckUrl)
                         .userAgent("Mozilla/5.0")
-                        .referrer("ranobe.me")
                         .timeout(10000)
                         .get();
 
@@ -169,6 +168,7 @@ public class BookDetailsActivity extends AppCompatActivity {
     private void downloadFile(String url, String format) {
         try {
             DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
+            request.addRequestHeader("Referer", "https://ranobe.me/");
             request.setTitle("Скачивание книги");
             request.setDescription("Формат: " + format.toUpperCase());
             request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
