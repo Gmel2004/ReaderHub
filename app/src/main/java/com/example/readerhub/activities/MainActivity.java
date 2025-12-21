@@ -300,9 +300,9 @@ public class MainActivity extends AppCompatActivity implements BookAdapter.OnBoo
     public void onBookLongClick(Book book) {
         String[] options;
         if (book.isFavorite()) {
-            options = new String[]{"Delete", "Remove from Favorites", "Book Details"};
+            options = new String[]{"Delete", "Remove from Favorites"};
         } else {
-            options = new String[]{"Delete", "Mark as Favorite", "Book Details"};
+            options = new String[]{"Delete", "Mark as Favorite"};
         }
         
         new AlertDialog.Builder(this)
@@ -315,9 +315,6 @@ public class MainActivity extends AppCompatActivity implements BookAdapter.OnBoo
                                     break;
                                 case 1:
                                     toggleFavorite(book);
-                                    break;
-                                case 2:
-                                    showBookDetails(book);
                                     break;
                             }
                         })
