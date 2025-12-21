@@ -17,11 +17,13 @@ import com.example.readerhub.R;
 import com.example.readerhub.models.Book;
 import com.example.readerhub.parsers.WebBookParser;
 import com.example.readerhub.repository.BookRepository;
+import com.example.readerhub.utils.FileUtils;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 
+import java.io.File;
 import java.util.stream.Collectors;
 import android.content.BroadcastReceiver;
 import android.content.Intent;
@@ -276,26 +278,94 @@ public class BookDetailsActivity extends AppCompatActivity {
     };
 
     private void addBookToDatabase(String fileUri) {
-        String filePath = Uri.parse(fileUri).getPath();
-        Book book = new Book(bookTitle, bookAuthor, filePath, bookFormat.toUpperCase());
-        
-        // Сохраняем обложку
-        if (bookCoverUrl != null && !bookCoverUrl.isEmpty()) {
-            book.setCoverUrl(bookCoverUrl);
-        }
+        new Thread(() -> {
+            try {
+                String initialFilePath = Uri.parse(fileUri).getPath();
+                File file = new File(initialFilePath);
+                
+                if (!file.exists()) {
+                    final String errorPath = initialFilePath;
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "Файл не найден: " + errorPath, Toast.LENGTH_SHORT).show();
+                    });
+                    return;
+                }
+                
+                // Определяем реальный тип файла по содержимому
+                String realFileType = FileUtils.detectFileTypeByContent(initialFilePath);
+                String actualFormat = bookFormat.toUpperCase();
+                String finalFilePath = initialFilePath;
+                
+                // Если реальный тип отличается от ожидаемого, исправляем
+                if (!"UNKNOWN".equals(realFileType) && !realFileType.equals(actualFormat)) {
+                    android.util.Log.w("BookDetailsActivity", 
+                        "File type mismatch! Expected: " + actualFormat + ", but detected: " + realFileType);
+                    
+                    // Переименовываем файл с правильным расширением
+                    String fileName = file.getName();
+                    int lastDot = fileName.lastIndexOf('.');
+                    String baseName = (lastDot > 0) ? fileName.substring(0, lastDot) : fileName;
+                    String newFileName = baseName + "." + realFileType.toLowerCase();
+                    File newFile = new File(file.getParent(), newFileName);
+                    
+                    if (file.renameTo(newFile)) {
+                        finalFilePath = newFile.getAbsolutePath();
+                        actualFormat = realFileType;
+                        android.util.Log.d("BookDetailsActivity", 
+                            "File renamed from " + fileName + " to " + newFileName);
+                    } else {
+                        android.util.Log.w("BookDetailsActivity", 
+                            "Failed to rename file, using detected type anyway");
+                        actualFormat = realFileType;
+                    }
+                }
+                
+                // Если тип все еще неизвестен, используем ожидаемый формат
+                if ("UNKNOWN".equals(actualFormat)) {
+                    actualFormat = bookFormat.toUpperCase();
+                }
+                
+                final String finalFormat = actualFormat;
+                final String finalFile = finalFilePath;
+                
+                Book book = new Book(bookTitle, bookAuthor, finalFile, finalFormat);
+                
+                // Сохраняем обложку
+                if (bookCoverUrl != null && !bookCoverUrl.isEmpty()) {
+                    book.setCoverUrl(bookCoverUrl);
+                }
+                
+                // Устанавливаем размер файла
+                File fileToCheck = new File(finalFile);
+                if (fileToCheck.exists()) {
+                    book.setFileSize(fileToCheck.length());
+                }
 
-        BookRepository repository = new BookRepository(this);
+                BookRepository repository = new BookRepository(this);
 
-        repository.insertBook(book, insertedId -> runOnUiThread(() -> {
+                repository.insertBook(book, insertedId -> runOnUiThread(() -> {
+                    String message = "Книга добавлена в библиотеку";
+                    if (!finalFormat.equals(bookFormat.toUpperCase())) {
+                        message += " (формат: " + finalFormat + ")";
+                    }
+                    
+                    Toast.makeText(
+                            BookDetailsActivity.this,
+                            message,
+                            Toast.LENGTH_SHORT
+                    ).show();
 
-            Toast.makeText(
-                    BookDetailsActivity.this,
-                    "Книга добавлена в библиотеку",
-                    Toast.LENGTH_SHORT
-            ).show();
-
-            setResult(RESULT_OK);
-            finish();
-        }));
+                    setResult(RESULT_OK);
+                    finish();
+                }));
+                
+            } catch (Exception e) {
+                android.util.Log.e("BookDetailsActivity", "Error adding book to database", e);
+                runOnUiThread(() -> {
+                    Toast.makeText(this, "Ошибка при добавлении книги: " + e.getMessage(), 
+                        Toast.LENGTH_LONG).show();
+                });
+            }
+        }).start();
     }
 }

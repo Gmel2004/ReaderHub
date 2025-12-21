@@ -13,6 +13,7 @@ import com.example.readerhub.models.ReadingHistory;
 import com.example.readerhub.repository.BookRepository;
 import com.example.readerhub.parsers.Fb2Parser;
 import com.example.readerhub.utils.PreferencesManager;
+import com.example.readerhub.utils.FileUtils;
 
 public class Fb2ReaderActivity extends AppCompatActivity {
 
@@ -72,7 +73,49 @@ public class Fb2ReaderActivity extends AppCompatActivity {
     private void parseFb2AndDisplay() {
         new Thread(() -> {
             try {
+                // Проверяем реальный тип файла
+                String realType = com.example.readerhub.utils.FileUtils.detectFileTypeByContent(currentBook.getFilePath());
+                if (!"FB2".equals(realType)) {
+                    runOnUiThread(() -> {
+                        if ("EPUB".equals(realType)) {
+                            Toast.makeText(this, "Это EPUB файл, а не FB2! Открываю как EPUB...", Toast.LENGTH_LONG).show();
+                            // Перенаправляем на EPUB reader
+                            android.content.Intent intent = new android.content.Intent(this, com.example.readerhub.activities.EpubReaderActivity.class);
+                            intent.putExtra("bookId", bookId);
+                            startActivity(intent);
+                            finish();
+                        } else {
+                            Toast.makeText(this, "Неверный формат файла. Ожидается FB2, обнаружен: " + realType, Toast.LENGTH_LONG).show();
+                            finish();
+                        }
+                    });
+                    return;
+                }
+                
                 Fb2Parser.Fb2Book fb2Book = Fb2Parser.parse(currentBook.getFilePath());
+                
+                // Проверяем, что парсинг прошел успешно
+                if (fb2Book == null) {
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "Ошибка: парсер вернул null", Toast.LENGTH_LONG).show();
+                        finish();
+                    });
+                    return;
+                }
+                
+                // Логируем результаты парсинга для отладки
+                android.util.Log.d("Fb2ReaderActivity", "Parsed FB2 - title: " + fb2Book.title + 
+                    ", author: " + fb2Book.author + ", chapters: " + fb2Book.chapters.size());
+                
+                // Проверяем наличие содержимого
+                if (fb2Book.chapters.isEmpty()) {
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "В файле не найдено содержимое. Попробуйте другой файл.", Toast.LENGTH_LONG).show();
+                        finish();
+                    });
+                    return;
+                }
+                
                 String htmlContent = Fb2Parser.convertToHtml(fb2Book);
 
                 runOnUiThread(() -> {

@@ -118,4 +118,109 @@ public class FileUtils {
         File file = new File(filePath);
         return file.exists() && file.delete();
     }
+
+    /**
+     * Определяет реальный тип файла по его содержимому (сигнатуре)
+     * @return "EPUB", "FB2", "PDF" или "UNKNOWN"
+     */
+    public static String detectFileTypeByContent(String filePath) {
+        try {
+            java.io.FileInputStream fis = new java.io.FileInputStream(filePath);
+            byte[] header = new byte[4];
+            int bytesRead = fis.read(header);
+            fis.close();
+            
+            if (bytesRead >= 2) {
+                // EPUB/ZIP signature: PK (0x50 0x4B)
+                if (header[0] == 0x50 && header[1] == 0x4B) {
+                    // Это ZIP архив, нужно проверить содержимое
+                    // EPUB должен содержать mimetype файл с содержимым "application/epub+zip"
+                    // FB2.ZIP должен содержать .fb2 файл
+                    try {
+                        java.util.zip.ZipFile zipFile = new java.util.zip.ZipFile(filePath);
+                        java.util.Enumeration<? extends java.util.zip.ZipEntry> entries = zipFile.entries();
+                        
+                        boolean hasMimetype = false;
+                        boolean hasFb2File = false;
+                        boolean hasOpfFile = false;
+                        
+                        while (entries.hasMoreElements()) {
+                            java.util.zip.ZipEntry entry = entries.nextElement();
+                            String name = entry.getName().toLowerCase();
+                            
+                            if (name.equals("mimetype")) {
+                                // Проверяем содержимое mimetype
+                                java.io.InputStream is = zipFile.getInputStream(entry);
+                                byte[] mimetypeBytes = new byte[20];
+                                int read = is.read(mimetypeBytes);
+                                is.close();
+                                if (read > 0) {
+                                    String mimetype = new String(mimetypeBytes, 0, read, "UTF-8");
+                                    if (mimetype.contains("epub")) {
+                                        hasMimetype = true;
+                                    }
+                                }
+                            }
+                            
+                            if (name.endsWith(".fb2") || name.endsWith(".xml")) {
+                                // Проверяем, является ли это FB2 файлом
+                                java.io.InputStream is = zipFile.getInputStream(entry);
+                                byte[] fb2Header = new byte[100];
+                                int read = is.read(fb2Header);
+                                is.close();
+                                if (read > 0) {
+                                    String content = new String(fb2Header, 0, read, "UTF-8");
+                                    if (content.contains("FictionBook") || content.contains("fictionbook")) {
+                                        hasFb2File = true;
+                                    }
+                                }
+                            }
+                            
+                            if (name.endsWith(".opf")) {
+                                hasOpfFile = true;
+                            }
+                        }
+                        
+                        zipFile.close();
+                        
+                        // EPUB должен иметь mimetype или opf файл
+                        if (hasMimetype || hasOpfFile) {
+                            return "EPUB";
+                        }
+                        // FB2.ZIP должен иметь .fb2 файл
+                        if (hasFb2File) {
+                            return "FB2";
+                        }
+                        // Если есть opf, но нет mimetype, все равно EPUB
+                        if (hasOpfFile) {
+                            return "EPUB";
+                        }
+                    } catch (Exception e) {
+                        // Если не удалось открыть как ZIP, возможно это поврежденный файл
+                        // Но по сигнатуре это ZIP, поэтому скорее всего EPUB
+                        return "EPUB";
+                    }
+                }
+                // PDF signature: %PDF
+                if (header[0] == 0x25 && header[1] == 0x50 && header[2] == 0x44 && header[3] == 0x46) {
+                    return "PDF";
+                }
+                // XML/FB2 signature: <? or <FictionBook
+                if (header[0] == 0x3C) {
+                    // Читаем больше байт для проверки
+                    fis = new java.io.FileInputStream(filePath);
+                    byte[] moreBytes = new byte[200];
+                    int moreRead = fis.read(moreBytes);
+                    fis.close();
+                    String start = new String(moreBytes, 0, Math.min(moreRead, 200), "UTF-8").trim();
+                    if (start.startsWith("<?xml") || start.startsWith("<FictionBook") || start.startsWith("<fictionbook")) {
+                        return "FB2";
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "UNKNOWN";
+    }
 }

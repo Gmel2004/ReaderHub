@@ -110,6 +110,23 @@ public class MainActivity extends AppCompatActivity implements BookAdapter.OnBoo
                     return;
                 }
                 
+                // Определяем реальный тип файла по содержимому
+                String realFileType = FileUtils.detectFileTypeByContent(destFile.getAbsolutePath());
+                if (!"UNKNOWN".equals(realFileType) && !realFileType.equals(fileType)) {
+                    android.util.Log.w("MainActivity", "File type mismatch! Extension says: " + fileType + ", but content is: " + realFileType);
+                    fileType = realFileType; // Используем реальный тип
+                    
+                    // Исправляем расширение файла если нужно
+                    if (!fileName.toLowerCase().endsWith("." + realFileType.toLowerCase())) {
+                        String newFileName = fileName.substring(0, fileName.lastIndexOf('.')) + "." + realFileType.toLowerCase();
+                        File newFile = new File(destFile.getParent(), newFileName);
+                        if (destFile.renameTo(newFile)) {
+                            destFile = newFile;
+                            fileName = newFileName;
+                        }
+                    }
+                }
+                
                 // Извлекаем метаданные и обложку
                 String title = fileName.replace("." + extension, "");
                 String author = "Unknown Author";
