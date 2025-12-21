@@ -64,9 +64,11 @@ dependencies {
     // Jsoup for HTML parsing
     implementation libs.jsoup
 
-    // EPUB Reader
-    //implementation 'com.github.folioreader:FolioReader-Android:0.5.4'
-
+    // EPUB Reader - используем альтернативную библиотеку из Maven Central
+    // EPUB - это ZIP архив, поэтому используем простой парсер
+    // Можно использовать библиотеку из GitHub или написать свой парсер
+    // Временно используем простой подход через ZIP
+    
     // PDF Viewer
     //implementation 'com.github.mhiew:android-pdf-viewer:3.2.0-beta.1'
 

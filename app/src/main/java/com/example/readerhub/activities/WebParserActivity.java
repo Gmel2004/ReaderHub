@@ -23,6 +23,7 @@ import com.example.readerhub.utils.FileUtils;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.List;
+import android.util.Log;
 
 public class WebParserActivity extends AppCompatActivity
         implements WebBookParser.OnBooksParseListener,
@@ -36,6 +37,11 @@ public class WebParserActivity extends AppCompatActivity
     private ParsedBookAdapter adapter;
     private WebBookParser parser;
     private BookRepository repository;
+    private  long lastDownloadId = -1;
+
+    private String bookTitle;
+    private String bookAuthor;
+    private String bookFormat;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -297,7 +303,6 @@ public class WebParserActivity extends AppCompatActivity
 
     private void saveBookToDatabase(WebBookParser.ParsedBook parsedBook, String htmlContent) {
         try {
-            // Создаём HTML файл
             String fileName = parsedBook.title.replaceAll("[^a-zA-Zа-яА-Я0-9]", "_") + ".html";
             File booksDir = new File(getFilesDir(), "books");
             if (!booksDir.exists()) {
@@ -306,41 +311,40 @@ public class WebParserActivity extends AppCompatActivity
 
             File bookFile = new File(booksDir, fileName);
 
-            // Формируем полный HTML документ
             String fullHtml = createHtmlDocument(parsedBook, htmlContent);
 
             FileOutputStream fos = new FileOutputStream(bookFile);
             fos.write(fullHtml.getBytes("UTF-8"));
             fos.close();
 
-            // Сохраняем в базу данных
-            Book book = new Book(
-                    parsedBook.title,
-                    parsedBook.author,
-                    bookFile.getAbsolutePath(),
-                    "HTML"
-            );
-            book.setCoverUrl(parsedBook.coverUrl);
-            book.setTotalPages(parsedBook.chapters);
+            Book book = new Book(parsedBook.title, parsedBook.author, bookFile.getAbsolutePath(), parsedBook.fileType);
+            
+            // Сохраняем обложку
+            if (parsedBook.coverUrl != null && !parsedBook.coverUrl.isEmpty()) {
+                book.setCoverUrl(parsedBook.coverUrl);
+            }
 
-            repository.insertBook(book, bookId ->
-                    runOnUiThread(() -> {
-                        setLoading(false);
-                        Toast.makeText(this,
-                                "Книга успешно добавлена в библиотеку!",
-                                Toast.LENGTH_LONG).show();
-                        finish();
-                    })
-            );
+            BookRepository repository = new BookRepository(this);
+
+            repository.insertBook(book, bookId -> {
+                Log.d("BOOK_DEBUG", "Book inserted with id = " + bookId);
+
+                runOnUiThread(() -> {
+                    Toast.makeText(
+                            WebParserActivity.this,
+                            "Книга добавлена",
+                            Toast.LENGTH_SHORT
+                    ).show();
+
+                    setResult(RESULT_OK);
+                    finish();
+                });
+            });
 
         } catch (Exception e) {
-            e.printStackTrace();
-            runOnUiThread(() -> {
-                setLoading(false);
-                Toast.makeText(this,
-                        "Ошибка сохранения: " + e.getMessage(),
-                        Toast.LENGTH_SHORT).show();
-            });
+            runOnUiThread(() ->
+                    Toast.makeText(this, "Ошибка сохранения: " + e.getMessage(), Toast.LENGTH_LONG).show()
+            );
         }
     }
 

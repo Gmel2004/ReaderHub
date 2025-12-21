@@ -41,6 +41,10 @@
             android:exported="false" />
 
         <!-- Reader Activities -->
+        <activity
+            android:name=".activities.EpubReaderActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
 
         <activity
             android:name=".activities.Fb2ReaderActivity"

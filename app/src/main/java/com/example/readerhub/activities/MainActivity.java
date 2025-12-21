@@ -17,14 +17,25 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.net.Uri;
+import android.os.Build;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+
 import com.example.readerhub.R;
 import com.example.readerhub.adapters.BookAdapter;
 import com.example.readerhub.models.Book;
 import com.example.readerhub.repository.BookRepository;
+import com.example.readerhub.utils.FileUtils;
 import com.example.readerhub.utils.PreferencesManager;
+import com.example.readerhub.utils.BookCoverExtractor;
+import com.example.readerhub.parsers.Fb2Parser;
+import com.example.readerhub.parsers.EpubParser;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.tabs.TabLayout;
 
+import java.io.File;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements BookAdapter.OnBookClickListener {
@@ -39,6 +50,14 @@ public class MainActivity extends AppCompatActivity implements BookAdapter.OnBoo
     private FloatingActionButton fabAddBook;
 
     private String currentFilter = "all"; // all, recent, favorites
+    
+    private ActivityResultLauncher<Intent> filePickerLauncher;
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadBooks();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,8 +68,127 @@ public class MainActivity extends AppCompatActivity implements BookAdapter.OnBoo
         repository = new BookRepository(this);
 
         initViews();
+        setupFilePicker();
         checkPermissions();
         loadBooks();
+    }
+    
+    private void setupFilePicker() {
+        filePickerLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                    Uri uri = result.getData().getData();
+                    if (uri != null) {
+                        handleSelectedFile(uri);
+                    }
+                }
+            }
+        );
+    }
+    
+    private void handleSelectedFile(Uri uri) {
+        new Thread(() -> {
+            try {
+                String fileName = FileUtils.getFileName(this, uri);
+                String extension = FileUtils.getFileExtension(fileName);
+                String fileType = FileUtils.getFileType(extension);
+                
+                if ("UNKNOWN".equals(fileType)) {
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "Unsupported file format", Toast.LENGTH_SHORT).show();
+                    });
+                    return;
+                }
+                
+                // Копируем файл во внутреннее хранилище
+                File destFile = FileUtils.copyFileToInternalStorage(this, uri, fileName);
+                if (destFile == null) {
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "Error copying file", Toast.LENGTH_SHORT).show();
+                    });
+                    return;
+                }
+                
+                // Извлекаем метаданные и обложку
+                String title = fileName.replace("." + extension, "");
+                String author = "Unknown Author";
+                String coverPath = null;
+                
+                // Пытаемся извлечь обложку
+                coverPath = BookCoverExtractor.extractCover(this, destFile.getAbsolutePath(), fileType);
+                
+                // Для EPUB можно попробовать извлечь метаданные
+                if ("EPUB".equals(fileType)) {
+                    try {
+                        android.util.Log.d("MainActivity", "Parsing EPUB: " + destFile.getAbsolutePath());
+                        EpubParser.EpubBook epubBook = EpubParser.parse(destFile.getAbsolutePath());
+                        if (epubBook != null) {
+                            android.util.Log.d("MainActivity", "EPUB parsed - title: " + epubBook.title + ", author: " + epubBook.author + ", chapters: " + epubBook.chapters.size());
+                            if (epubBook.title != null && !epubBook.title.isEmpty()) {
+                                title = epubBook.title;
+                            }
+                            if (epubBook.author != null && !epubBook.author.isEmpty()) {
+                                author = epubBook.author;
+                            }
+                            // Если нет глав, возможно файл поврежден
+                            if (epubBook.chapters.isEmpty()) {
+                                android.util.Log.w("MainActivity", "EPUB has no chapters!");
+                            }
+                        } else {
+                            android.util.Log.w("MainActivity", "EPUB parsing returned null");
+                        }
+                    } catch (Exception e) {
+                        android.util.Log.e("MainActivity", "Error parsing EPUB", e);
+                        e.printStackTrace();
+                    }
+                }
+                
+                // Для FB2 можно попробовать извлечь метаданные
+                if ("FB2".equals(fileType)) {
+                    try {
+                        android.util.Log.d("MainActivity", "Parsing FB2: " + destFile.getAbsolutePath());
+                        Fb2Parser.Fb2Book fb2Book = Fb2Parser.parse(destFile.getAbsolutePath());
+                        if (fb2Book != null) {
+                            android.util.Log.d("MainActivity", "FB2 parsed - title: " + fb2Book.title + ", author: " + fb2Book.author + ", chapters: " + fb2Book.chapters.size());
+                            if (fb2Book.title != null && !fb2Book.title.isEmpty() && !fb2Book.title.equals("null")) {
+                                title = fb2Book.title;
+                            }
+                            if (fb2Book.author != null && !fb2Book.author.isEmpty() && !fb2Book.author.equals("null")) {
+                                author = fb2Book.author;
+                            }
+                            if (fb2Book.chapters.isEmpty()) {
+                                android.util.Log.w("MainActivity", "FB2 has no chapters!");
+                            }
+                        } else {
+                            android.util.Log.w("MainActivity", "FB2 parsing returned null");
+                        }
+                    } catch (Exception e) {
+                        android.util.Log.e("MainActivity", "Error parsing FB2", e);
+                        e.printStackTrace();
+                    }
+                }
+                
+                // Создаем книгу
+                Book book = new Book(title, author, destFile.getAbsolutePath(), fileType);
+                book.setFileSize(destFile.length());
+                if (coverPath != null) {
+                    book.setCoverUrl("file://" + coverPath);
+                }
+                
+                // Добавляем в БД
+                repository.insertBook(book, bookId -> runOnUiThread(() -> {
+                    Toast.makeText(this, "Book added successfully", Toast.LENGTH_SHORT).show();
+                    loadBooks();
+                }));
+                
+            } catch (Exception e) {
+                e.printStackTrace();
+                runOnUiThread(() -> {
+                    Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+            }
+        }).start();
     }
 
     private void initViews() {
@@ -124,9 +262,9 @@ public class MainActivity extends AppCompatActivity implements BookAdapter.OnBoo
     public void onBookClick(Book book) {
         Intent intent;
         switch (book.getFileType()) {
-//            case "EPUB":
-//                intent = new Intent(this, EpubReaderActivity.class);
-//                break;
+            case "EPUB":
+                intent = new Intent(this, EpubReaderActivity.class);
+                break;
 //            case "PDF":
 //                intent = new Intent(this, PdfReaderActivity.class);
 //                break;
@@ -206,7 +344,7 @@ public class MainActivity extends AppCompatActivity implements BookAdapter.OnBoo
         intent.setType("*/*");
         String[] mimeTypes = {"application/epub+zip", "application/pdf", "application/x-fictionbook+xml"};
         intent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes);
-        startActivityForResult(intent, 1);
+        filePickerLauncher.launch(intent);
     }
 
     @Override

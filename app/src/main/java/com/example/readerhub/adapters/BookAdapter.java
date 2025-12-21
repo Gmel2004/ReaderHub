@@ -95,10 +95,27 @@ public class BookAdapter extends RecyclerView.Adapter<BookAdapter.BookViewHolder
 
         // Cover image
         if (book.getCoverUrl() != null && !book.getCoverUrl().isEmpty()) {
-            Glide.with(context)
-                    .load(book.getCoverUrl())
-                    .placeholder(R.drawable.ic_book_placeholder)
-                    .into(holder.coverImageView);
+            String coverUrl = book.getCoverUrl();
+            // Если это локальный файл (file://), используем File напрямую
+            if (coverUrl.startsWith("file://")) {
+                java.io.File coverFile = new java.io.File(coverUrl.substring(7));
+                if (coverFile.exists()) {
+                    Glide.with(context)
+                            .load(coverFile)
+                            .placeholder(R.drawable.ic_book_placeholder)
+                            .error(R.drawable.ic_book_placeholder)
+                            .into(holder.coverImageView);
+                } else {
+                    holder.coverImageView.setImageResource(R.drawable.ic_book_placeholder);
+                }
+            } else {
+                // Это URL из интернета
+                Glide.with(context)
+                        .load(coverUrl)
+                        .placeholder(R.drawable.ic_book_placeholder)
+                        .error(R.drawable.ic_book_placeholder)
+                        .into(holder.coverImageView);
+            }
         } else {
             holder.coverImageView.setImageResource(R.drawable.ic_book_placeholder);
         }
