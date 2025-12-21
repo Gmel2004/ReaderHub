@@ -2,10 +2,13 @@ package com.example.readerhub.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.KeyEvent;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
@@ -29,8 +32,8 @@ public class WebParserActivity extends AppCompatActivity
         implements WebBookParser.OnBooksParseListener,
         ParsedBookAdapter.OnParsedBookClickListener {
 
-    private EditText urlEditText;
-    private Button parseButton;
+    private EditText searchEditText;
+    private Button searchButton;
     private Button quickRanobeButton;
     private ProgressBar progressBar;
     private RecyclerView recyclerView;
@@ -56,8 +59,8 @@ public class WebParserActivity extends AppCompatActivity
     }
 
     private void initViews() {
-        urlEditText = findViewById(R.id.urlEditText);
-        parseButton = findViewById(R.id.parseButton);
+        searchEditText = findViewById(R.id.searchEditText);
+        searchButton = findViewById(R.id.searchButton);
         quickRanobeButton = findViewById(R.id.quickRanobeButton);
         progressBar = findViewById(R.id.progressBar);
         recyclerView = findViewById(R.id.recyclerView);
@@ -65,99 +68,75 @@ public class WebParserActivity extends AppCompatActivity
         adapter = new ParsedBookAdapter(this, this);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
-
-        // Устанавливаем дефолтный URL для ranobe.me
-        urlEditText.setHint("https://ranobe.me/");
     }
 
     private void setupListeners() {
-        parseButton.setOnClickListener(v -> startParsing());
+        // Поиск по названию
+        searchButton.setOnClickListener(v -> performSearch());
+        
+        // Поиск при нажатии Enter
+        searchEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_SEARCH || 
+                    (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN)) {
+                    performSearch();
+                    return true;
+                }
+                return false;
+            }
+        });
 
         // Быстрый доступ к популярным разделам ranobe.me
         quickRanobeButton.setOnClickListener(v -> showQuickLinks());
     }
+    
+    private void performSearch() {
+        String query = searchEditText.getText().toString().trim();
+        if (query.isEmpty()) {
+            searchEditText.setError("Введите название книги");
+            return;
+        }
+        searchRanobe(query);
+    }
 
     private void showQuickLinks() {
         String[] options = {
-                "Поиск по названию",
-                "Новинки",
-                "Популярные",
-                "Завершённые",
-                "Русские ранобэ",
-                "Корейские ранобэ",
-                "Японские ранобэ",
-                "Китайские ранобэ"
+                "Английский",
+                "Китайский",
+                "Корейский",
+                "Русский",
+                "Японский"
         };
 
         String[] urls = {
-                "SEARCH", // специальный маркер для поиска
-                "https://ranobe.me/",
-                "https://ranobe.me/catalog/sort/popular",
-                "https://ranobe.me/catalog/status/completed",
-                "https://ranobe.me/catalog/country/russia",
-                "https://ranobe.me/catalog/country/korea",
-                "https://ranobe.me/catalog/country/japan",
-                "https://ranobe.me/catalog/country/china"
+                "SEARCH",
+                "https://ranobe.me/catalog/language/4", // Английский
+                "https://ranobe.me/catalog/language/2", // Китайский
+                "https://ranobe.me/catalog/language/3", // Корейский
+                "https://ranobe.me/catalog/language/5", // Русский
+                "https://ranobe.me/catalog/language/1" // Японский
         };
 
         new AlertDialog.Builder(this)
                 .setTitle("Быстрый переход")
                 .setItems(options, (dialog, which) -> {
                     if (urls[which].equals("SEARCH")) {
-                        showSearchDialog();
+                        // Если выбран поиск, фокусируемся на поле поиска
+                        searchEditText.requestFocus();
                     } else {
-                        urlEditText.setText(urls[which]);
-                        startParsing();
+                        // Для категорий сразу запускаем парсинг
+                        setLoading(true);
+                        parser.parseRanobeCatalog(urls[which], this);
                     }
                 })
                 .show();
     }
 
-    private void showSearchDialog() {
-        EditText input = new EditText(this);
-        input.setHint("Название книги");
-
-        new AlertDialog.Builder(this)
-                .setTitle("Поиск на ranobe.me")
-                .setView(input)
-                .setPositiveButton("Искать", (dialog, which) -> {
-                    String query = input.getText().toString().trim();
-                    if (!query.isEmpty()) {
-                        searchRanobe(query);
-                    }
-                })
-                .setNegativeButton("Отмена", null)
-                .show();
-    }
 
     private void searchRanobe(String query) {
         setLoading(true);
         parser.searchRanobe(query, this);
-    }
-
-    private void startParsing() {
-        String url = urlEditText.getText().toString().trim();
-
-        if (url.isEmpty()) {
-            urlEditText.setError("Введите URL");
-            return;
-        }
-
-        if (!url.startsWith("http://") && !url.startsWith("https://")) {
-            url = "https://" + url;
-        }
-
-        setLoading(true);
-
-        // Определяем тип парсинга
-        if (WebBookParser.isRanobeUrl(url)) {
-            parser.parseRanobeCatalog(url, this);
-        } else {
-            Toast.makeText(this,
-                    "Этот парсер настроен для ranobe.me. Другие сайты могут не работать.",
-                    Toast.LENGTH_LONG).show();
-            parser.parseRanobeCatalog(url, this);
-        }
     }
 
     @Override
@@ -404,9 +383,9 @@ public class WebParserActivity extends AppCompatActivity
     private void setLoading(boolean isLoading) {
         runOnUiThread(() -> {
             progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);
-            parseButton.setEnabled(!isLoading);
+            searchButton.setEnabled(!isLoading);
             quickRanobeButton.setEnabled(!isLoading);
-            urlEditText.setEnabled(!isLoading);
+            searchEditText.setEnabled(!isLoading);
         });
     }
 }

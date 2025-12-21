@@ -50,8 +50,23 @@ public class ParsedBookAdapter extends RecyclerView.Adapter<ParsedBookAdapter.Vi
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         WebBookParser.ParsedBook book = books.get(position);
 
-        holder.titleTextView.setText(book.title);
-        holder.authorTextView.setText(book.author);
+        // Устанавливаем название книги
+        if (book.title != null && !book.title.trim().isEmpty()) {
+            holder.titleTextView.setText(book.title);
+            holder.titleTextView.setVisibility(View.VISIBLE);
+        } else {
+            holder.titleTextView.setVisibility(View.GONE);
+        }
+
+        // Скрываем автора, если он "Unknown Author" или пустой
+        if (book.author != null && !book.author.trim().isEmpty() && 
+            !book.author.equals("Unknown Author") && !book.author.equals("Unknown")) {
+            holder.authorTextView.setText(book.author);
+            holder.authorTextView.setVisibility(View.VISIBLE);
+        } else {
+            holder.authorTextView.setVisibility(View.GONE);
+        }
+
         holder.fileTypeTextView.setText(book.fileType != null ? book.fileType : "Unknown");
 
         // Показываем количество глав
