@@ -8,10 +8,19 @@ android {
 
     defaultConfig {
         applicationId "com.example.readerhub"
-        minSdk 21
+        minSdk 28
         targetSdk 36
         versionCode 1
         versionName "1.0"
+
+        // Читаем URL из local.properties или используем дефолтный
+        Properties properties = new Properties()
+        if (rootProject.file("local.properties").exists()) {
+            properties.load(rootProject.file("local.properties").newDataInputStream())
+        }
+
+        buildConfigField "String", "API_BASE_URL",
+                properties.getProperty("api.base.url", '""')
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -27,20 +36,43 @@ android {
         targetCompatibility JavaVersion.VERSION_11
     }
     buildFeatures {
+        buildConfig = true
         viewBinding true
+    }
+    viewBinding {
+        enabled true
     }
 }
 
 dependencies {
+    implementation libs.appcompat.v171
+    implementation libs.material.v1110
+    implementation libs.constraintlayout.v221
+    implementation libs.cardview
+    implementation libs.recyclerview
 
-    implementation libs.appcompat
-    implementation libs.material
-    implementation libs.constraintlayout
-    implementation libs.lifecycle.livedata.ktx
-    implementation libs.lifecycle.viewmodel.ktx
-    implementation libs.navigation.fragment
-    implementation libs.navigation.ui
+    // Room Database
+    implementation libs.room.runtime.v261
+    annotationProcessor libs.room.compiler.v261
+
+    // Retrofit & OkHttp
+    implementation libs.retrofit.v290
+    implementation libs.converter.gson.v290
+    implementation libs.okhttp
+    implementation libs.logging.interceptor
+
+    implementation libs.jsoup
+
+    implementation 'com.github.kittinunf.fuel:fuel:2.3.1'
+    implementation 'com.github.kittinunf.fuel:fuel-android:2.3.1'
+
+    // Glide for image loading
+    implementation 'com.github.bumptech.glide:glide:5.0.5'
+    annotationProcessor libs.compiler
+
+    // Testing
     testImplementation libs.junit
-    androidTestImplementation libs.ext.junit
-    androidTestImplementation libs.espresso.core
+    androidTestImplementation libs.junit.v130
+    androidTestImplementation libs.espresso.core.v370
+    annotationProcessor libs.room.compiler
 }
