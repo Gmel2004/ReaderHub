@@ -298,9 +298,16 @@ public class MainActivity extends AppCompatActivity implements BookAdapter.OnBoo
 
     @Override
     public void onBookLongClick(Book book) {
+        String[] options;
+        if (book.isFavorite()) {
+            options = new String[]{"Delete", "Remove from Favorites"};
+        } else {
+            options = new String[]{"Delete", "Mark as Favorite"};
+        }
+        
         new AlertDialog.Builder(this)
                 .setTitle(book.getTitle())
-                .setItems(new String[]{"Delete", "Mark as Favorite", "Book Details"},
+                .setItems(options,
                         (dialog, which) -> {
                             switch (which) {
                                 case 0:
@@ -308,9 +315,6 @@ public class MainActivity extends AppCompatActivity implements BookAdapter.OnBoo
                                     break;
                                 case 1:
                                     toggleFavorite(book);
-                                    break;
-                                case 2:
-                                    showBookDetails(book);
                                     break;
                             }
                         })
@@ -322,18 +326,39 @@ public class MainActivity extends AppCompatActivity implements BookAdapter.OnBoo
                 .setTitle("Delete Book")
                 .setMessage("Are you sure you want to delete this book?")
                 .setPositiveButton("Delete", (dialog, which) -> {
-                    repository.deleteBook(book);
-                    loadBooks();
-                    Toast.makeText(this, "Book deleted", Toast.LENGTH_SHORT).show();
+                    repository.deleteBook(book, () -> runOnUiThread(() -> {
+                        // Обновляем GUI в зависимости от текущего фильтра после успешного удаления
+                        refreshCurrentView();
+                        Toast.makeText(this, "Book deleted", Toast.LENGTH_SHORT).show();
+                    }));
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
     }
+    
+    private void refreshCurrentView() {
+        switch (currentFilter) {
+            case "all":
+                loadBooks();
+                break;
+            case "recent":
+                loadRecentBooks();
+                break;
+            case "favorites":
+                loadFavoriteBooks();
+                break;
+            default:
+                loadBooks();
+        }
+    }
 
     private void toggleFavorite(Book book) {
-        book.setFavorite(!book.isFavorite());
-        repository.updateFavoriteStatus(book.getId(), book.isFavorite());
-        loadBooks();
+        boolean newFavoriteStatus = !book.isFavorite();
+        book.setFavorite(newFavoriteStatus);
+        repository.updateFavoriteStatus(book.getId(), newFavoriteStatus, () -> runOnUiThread(() -> {
+            // Обновляем GUI после успешного обновления статуса избранного
+            refreshCurrentView();
+        }));
     }
 
     private void showBookDetails(Book book) {

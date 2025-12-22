@@ -9,6 +9,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,9 +47,17 @@ public class WebBookParser {
 
     // Парсинг поиска ranobe.me
     public void searchRanobe(String query, OnBooksParseListener listener) {
-        String searchUrl = "https://ranobe.me/index.php?section=search&str=" +
-                query.replace(" ", "+");
-        new ParseRanobeTask(searchUrl, listener).execute();
+        try {
+            // Правильное URL кодирование для поддержки русского языка
+            String encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8.toString());
+            String searchUrl = "https://ranobe.me/index.php?section=search&str=" + encodedQuery;
+            new ParseRanobeTask(searchUrl, listener).execute();
+        } catch (Exception e) {
+            // Fallback на простую замену пробелов, если кодирование не удалось
+            String searchUrl = "https://ranobe.me/index.php?section=search&str=" +
+                    query.replace(" ", "+");
+            new ParseRanobeTask(searchUrl, listener).execute();
+        }
     }
 
     // Парсинг конкретной книги для получения подробной информации

@@ -43,8 +43,13 @@ public class BookRepository {
         executorService.execute(() -> bookDao.update(book));
     }
 
-    public void deleteBook(Book book) {
-        executorService.execute(() -> bookDao.delete(book));
+    public void deleteBook(Book book, OnBookDeletedListener listener) {
+        executorService.execute(() -> {
+            bookDao.delete(book);
+            if (listener != null) {
+                listener.onBookDeleted();
+            }
+        });
     }
 
     public void getAllBooks(OnBooksLoadedListener listener) {
@@ -98,8 +103,13 @@ public class BookRepository {
         );
     }
 
-    public void updateFavoriteStatus(int bookId, boolean isFavorite) {
-        executorService.execute(() -> bookDao.updateFavoriteStatus(bookId, isFavorite));
+    public void updateFavoriteStatus(int bookId, boolean isFavorite, OnFavoriteStatusUpdatedListener listener) {
+        executorService.execute(() -> {
+            bookDao.updateFavoriteStatus(bookId, isFavorite);
+            if (listener != null) {
+                listener.onFavoriteStatusUpdated();
+            }
+        });
     }
 
     // Bookmark operations
@@ -162,5 +172,13 @@ public class BookRepository {
 
     public interface OnHistoryLoadedListener {
         void onHistoryLoaded(List<ReadingHistory> history);
+    }
+
+    public interface OnBookDeletedListener {
+        void onBookDeleted();
+    }
+
+    public interface OnFavoriteStatusUpdatedListener {
+        void onFavoriteStatusUpdated();
     }
 }

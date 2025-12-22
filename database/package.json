@@ -1,0 +1,28 @@
+{
+  "name": "readerhub-database",
+  "version": "1.0.0",
+  "description": "Database migrations and setup scripts for ReaderHub",
+  "main": "migrations.js",
+  "scripts": {
+    "migrate:up": "node migrations.js up",
+    "migrate:down": "node migrations.js down",
+    "migrate:create": "node migrations.js create",
+    "setup": "node setup.js"
+  },
+  "keywords": [
+    "database",
+    "migrations",
+    "readerhub"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "mysql2": "^3.6.0",
+    "pg": "^8.11.0"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
+
