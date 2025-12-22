@@ -4,8 +4,9 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -48,6 +49,10 @@ public class MainActivity extends AppCompatActivity implements BookAdapter.OnBoo
     private PreferencesManager prefsManager;
     private TabLayout tabLayout;
     private FloatingActionButton fabAddBook;
+    private ImageView userIconImageView;
+    private TextView userStatusTextView;
+    private androidx.appcompat.widget.Toolbar toolbar;
+    private SearchView searchView;
 
     private String currentFilter = "all"; // all, recent, favorites
     
@@ -57,6 +62,7 @@ public class MainActivity extends AppCompatActivity implements BookAdapter.OnBoo
     protected void onResume() {
         super.onResume();
         loadBooks();
+        updateUserStatus();
     }
 
     @Override
@@ -209,14 +215,29 @@ public class MainActivity extends AppCompatActivity implements BookAdapter.OnBoo
     }
 
     private void initViews() {
+        toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        
         recyclerView = findViewById(R.id.recyclerView);
         tabLayout = findViewById(R.id.tabLayout);
         fabAddBook = findViewById(R.id.fabAddBook);
+        userIconImageView = findViewById(R.id.userIconImageView);
+        userStatusTextView = findViewById(R.id.userStatusTextView);
+        searchView = findViewById(R.id.searchView);
 
         // Setup RecyclerView
         adapter = new BookAdapter(this, this);
         recyclerView.setLayoutManager(new GridLayoutManager(this, 2));
         recyclerView.setAdapter(adapter);
+        
+        // Setup user icon click listener
+        userIconImageView.setOnClickListener(v -> showUserMenu());
+        
+        // Setup search view
+        setupSearchView();
+        
+        // Update user status
+        updateUserStatus();
 
         // Setup tabs
         tabLayout.addTab(tabLayout.newTab().setText("All Books"));
@@ -389,13 +410,33 @@ public class MainActivity extends AppCompatActivity implements BookAdapter.OnBoo
         filePickerLauncher.launch(intent);
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-
-        MenuItem searchItem = menu.findItem(R.id.action_search);
-        SearchView searchView = (SearchView) searchItem.getActionView();
-
+    private void setupSearchView() {
+        // Настройка цветов для SearchView на темном фоне
+        int searchIconId = getResources().getIdentifier("android:id/search_mag_icon", null, null);
+        if (searchIconId != 0) {
+            ImageView searchIcon = searchView.findViewById(searchIconId);
+            if (searchIcon != null) {
+                searchIcon.setColorFilter(android.graphics.Color.WHITE);
+            }
+        }
+        
+        int searchCloseButtonId = getResources().getIdentifier("android:id/search_close_btn", null, null);
+        if (searchCloseButtonId != 0) {
+            ImageView closeButton = searchView.findViewById(searchCloseButtonId);
+            if (closeButton != null) {
+                closeButton.setColorFilter(android.graphics.Color.WHITE);
+            }
+        }
+        
+        int searchTextId = getResources().getIdentifier("android:id/search_src_text", null, null);
+        if (searchTextId != 0) {
+            TextView searchText = searchView.findViewById(searchTextId);
+            if (searchText != null) {
+                searchText.setTextColor(android.graphics.Color.WHITE);
+                searchText.setHintTextColor(android.graphics.Color.parseColor("#CCFFFFFF"));
+            }
+        }
+        
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
@@ -406,40 +447,13 @@ public class MainActivity extends AppCompatActivity implements BookAdapter.OnBoo
             @Override
             public boolean onQueryTextChange(String newText) {
                 if (newText.isEmpty()) {
-                    loadBooks();
+                    refreshCurrentView();
+                } else {
+                    searchBooks(newText);
                 }
                 return true;
             }
         });
-
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        int id = item.getItemId();
-
-        if (id == R.id.action_settings) {
-            startActivity(new Intent(this, SettingsActivity.class));
-            return true;
-        } else if (id == R.id.action_sync) {
-            if (prefsManager.isLoggedIn()) {
-                // TODO: Sync implementation
-                Toast.makeText(this, "Syncing...", Toast.LENGTH_SHORT).show();
-            } else {
-                startActivity(new Intent(this, LoginActivity.class));
-            }
-            return true;
-        } else if (id == R.id.action_logout) {
-            if (prefsManager.isLoggedIn()) {
-                logout();
-            } else {
-                startActivity(new Intent(this, LoginActivity.class));
-            }
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
     }
 
     private void searchBooks(String query) {
@@ -448,14 +462,55 @@ public class MainActivity extends AppCompatActivity implements BookAdapter.OnBoo
 
     private void logout() {
         new AlertDialog.Builder(this)
-                .setTitle("Logout")
-                .setMessage("Are you sure you want to logout?")
-                .setPositiveButton("Logout", (dialog, which) -> {
+                .setTitle("Выход")
+                .setMessage("Вы уверены, что хотите выйти из аккаунта?")
+                .setPositiveButton("Выйти", (dialog, which) -> {
                     prefsManager.clearUserSession();
-                    startActivity(new Intent(this, LoginActivity.class));
-                    finish();
+                    updateUserStatus();
+                    Toast.makeText(this, "Вы вышли из аккаунта", Toast.LENGTH_SHORT).show();
                 })
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton("Отмена", null)
                 .show();
+    }
+    
+    private void showUserMenu() {
+        String[] options;
+        if (prefsManager.isLoggedIn()) {
+            options = new String[]{"Выйти из аккаунта"};
+        } else {
+            options = new String[]{"Войти", "Регистрация"};
+        }
+        
+        new AlertDialog.Builder(this)
+                .setTitle(prefsManager.isLoggedIn() ? "Аккаунт" : "Гость")
+                .setItems(options, (dialog, which) -> {
+                    if (prefsManager.isLoggedIn()) {
+                        // Выход
+                        logout();
+                    } else {
+                        // Вход или регистрация
+                        if (which == 0) {
+                            // Войти
+                            startActivity(new Intent(this, LoginActivity.class));
+                        } else {
+                            // Регистрация
+                            startActivity(new Intent(this, RegisterActivity.class));
+                        }
+                    }
+                })
+                .show();
+    }
+    
+    private void updateUserStatus() {
+        if (prefsManager.isLoggedIn()) {
+            String username = prefsManager.getUsername();
+            if (username != null && !username.isEmpty()) {
+                userStatusTextView.setText(username);
+            } else {
+                userStatusTextView.setText("Пользователь");
+            }
+        } else {
+            userStatusTextView.setText("Гость");
+        }
     }
 }

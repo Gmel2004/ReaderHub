@@ -106,22 +106,129 @@ public class WebBookParser {
 
                 // ranobe.me использует класс "FicTable" для карточек книг
                 Elements bookCards = doc.select(".FicTable");
+                
+                // Если не найдено карточек с классом FicTable, пробуем другие варианты
+                if (bookCards.isEmpty()) {
+                    bookCards = doc.select("table.FicTable, .book-card, .search-result, [class*='FicTable']");
+                    Log.d(TAG, "Trying alternative selectors, found: " + bookCards.size());
+                }
 
                 Log.d(TAG, "Found " + bookCards.size() + " book cards");
 
                 for (Element card : bookCards) {
                     try {
-                        // Извлекаем заголовок и ссылку
-                        Element titleElement = card.selectFirst(".FicTable_Title a");
-                        if (titleElement == null) continue;
+                        // Извлекаем заголовок и ссылку - пробуем несколько вариантов селекторов
+                        Element titleElement = null;
+                        String title = null;
+                        String bookUrl = null;
+                        
+                        // Вариант 1: стандартный селектор
+                        titleElement = card.selectFirst(".FicTable_Title a");
+                        if (titleElement == null) {
+                            // Вариант 2: альтернативный селектор
+                            titleElement = card.selectFirst(".FicTable_Title");
+                            if (titleElement != null) {
+                                Element linkElement = titleElement.selectFirst("a");
+                                if (linkElement != null) {
+                                    titleElement = linkElement;
+                                }
+                            }
+                        }
+                        
+                        // Вариант 3: поиск по любому заголовку в карточке
+                        if (titleElement == null) {
+                            titleElement = card.selectFirst("h2 a, h3 a, .title a, a[href*='/ranobe/']");
+                        }
+                        
+                        // Вариант 4: поиск по любому элементу с классом, содержащим "title"
+                        if (titleElement == null) {
+                            Elements titleElements = card.select("[class*='title'], [class*='Title']");
+                            for (Element elem : titleElements) {
+                                Element link = elem.selectFirst("a");
+                                if (link != null) {
+                                    titleElement = link;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        if (titleElement == null) {
+                            Log.w(TAG, "Title element not found in card, skipping");
+                            continue;
+                        }
 
-                        String title = titleElement.text().trim();
-                        String bookUrl = titleElement.attr("abs:href");
+                        title = titleElement.text().trim();
+                        bookUrl = titleElement.attr("abs:href");
+                        
+                        // Если URL относительный, делаем его абсолютным
+                        if (bookUrl != null && !bookUrl.startsWith("http")) {
+                            if (bookUrl.startsWith("/")) {
+                                bookUrl = "https://ranobe.me" + bookUrl;
+                            } else {
+                                bookUrl = "https://ranobe.me/" + bookUrl;
+                            }
+                        }
+                        
+                        // Если название пустое, пробуем получить из атрибута title или alt
+                        if (title == null || title.isEmpty()) {
+                            title = titleElement.attr("title");
+                            if (title != null) title = title.trim();
+                        }
+                        if (title == null || title.isEmpty()) {
+                            title = titleElement.attr("alt");
+                            if (title != null) title = title.trim();
+                        }
+                        
+                        // Если все еще пустое, пробуем найти любой текст в родительском элементе
+                        if (title == null || title.isEmpty()) {
+                            Element parent = titleElement.parent();
+                            if (parent != null) {
+                                String parentText = parent.text().trim();
+                                if (parentText != null && !parentText.isEmpty()) {
+                                    title = parentText;
+                                }
+                            }
+                        }
+                        
+                        // Последняя попытка - ищем любой текст в карточке, который может быть названием
+                        if (title == null || title.isEmpty()) {
+                            // Ищем первый непустой текстовый элемент в карточке
+                            Elements textElements = card.select("a, h1, h2, h3, h4, .title, [class*='name']");
+                            for (Element elem : textElements) {
+                                String text = elem.text().trim();
+                                if (text != null && !text.isEmpty() && text.length() > 2) {
+                                    title = text;
+                                    bookUrl = elem.attr("abs:href");
+                                    if (bookUrl != null && !bookUrl.isEmpty() && bookUrl.contains("ranobe")) {
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if (title == null || title.isEmpty() || title.trim().isEmpty()) {
+                            Log.w(TAG, "Title is empty after all attempts, skipping book. Card HTML: " + card.html().substring(0, Math.min(200, card.html().length())));
+                            continue;
+                        }
+                        
+                        // Финальная очистка названия
+                        title = title.trim().replaceAll("\\s+", " ");
 
                         // Извлекаем автора (может не быть на странице поиска)
                         String author = "Unknown Author";
+                        
+                        // Пробуем найти автора в карточке
+                        Element authorElement = card.selectFirst(".FicTable_Author, .author, [class*='Author']");
+                        if (authorElement != null) {
+                            String authorText = authorElement.text().trim();
+                            if (authorText != null && !authorText.isEmpty() && 
+                                !authorText.equals("Unknown") && !authorText.equals("Unknown Author")) {
+                                author = authorText;
+                            }
+                        }
 
                         ParsedBook book = new ParsedBook(title, author, bookUrl);
+                        Log.d(TAG, "Parsed book - Title: " + title + ", URL: " + bookUrl);
 
                         // Извлекаем обложку
                         Element coverElement = card.selectFirst(".FicTable_Cover img");

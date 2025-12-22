@@ -52,10 +52,12 @@ public class ParsedBookAdapter extends RecyclerView.Adapter<ParsedBookAdapter.Vi
 
         // Устанавливаем название книги
         if (book.title != null && !book.title.trim().isEmpty()) {
-            holder.titleTextView.setText(book.title);
+            holder.titleTextView.setText(book.title.trim());
             holder.titleTextView.setVisibility(View.VISIBLE);
+            android.util.Log.d("ParsedBookAdapter", "Setting title: " + book.title);
         } else {
             holder.titleTextView.setVisibility(View.GONE);
+            android.util.Log.w("ParsedBookAdapter", "Title is null or empty for book at position " + position);
         }
 
         // Скрываем автора, если он "Unknown Author" или пустой
